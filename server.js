@@ -511,29 +511,37 @@ app.post('/api/users', (req, res) => {
     return res.status(400).json({ message: 'Email, password, and full name are required' });
   }
 
-  const query = `
-    INSERT INTO users (email, password, full_name, giftpoints, nb_trashthrown, smart_bin_id, created_at, updated_at, role)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `;
-
-  const values = [
-    email,
-    password,
-    full_name,
-    giftpoints || 0,
-    nb_trashthrown || 0,
-    smart_bin_id || 0,
-    created_at,
-    updated_at,
-    role || 'user' 
-  ];
-
-  db.query(query, values, (err, result) => {
+  // Hash the password before saving it to the database
+  bcrypt.hash(password, 10, (err, hashedPassword) => {
     if (err) {
-      console.error('Error inserting user:', err);
-      return res.status(500).json({ message: 'Server error' });
+      console.error('Error hashing password:', err);
+      return res.status(500).json({ message: 'Error hashing password' });
     }
-    res.status(201).json({ message: 'User added successfully', userId: result.insertId });
+
+    const query = `
+      INSERT INTO users (email, password, full_name, giftpoints, nb_trashthrown, smart_bin_id, created_at, updated_at, role)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    const values = [
+      email,
+      hashedPassword, // Use the hashed password
+      full_name,
+      giftpoints || 0,
+      nb_trashthrown || 0,
+      smart_bin_id || 0,
+      created_at,
+      updated_at,
+      role || 'user'
+    ];
+
+    db.query(query, values, (err, result) => {
+      if (err) {
+        console.error('Error inserting user:', err);
+        return res.status(500).json({ message: 'Server error' });
+      }
+      res.status(201).json({ message: 'User added successfully', userId: result.insertId });
+    });
   });
 });
 
