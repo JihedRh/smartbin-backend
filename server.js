@@ -1,17 +1,20 @@
 const express = require("express");
 const cors = require("cors");
 const mysql = require("mysql");
+require('dotenv').config();
+
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
 const db = mysql.createConnection({
-    host: "mysql-jihed.alwaysdata.net",
-    user: "jihed_rinchi",
-    password: "Jihed_94740025",
-    database : "jihed_smartbinv2",
+  host: process.env.HOST,
+  user: process.env.USER,
+  password: process.env.PASSWORD,
+  database : process.env.DATABASE,
 });
+
 
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
