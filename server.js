@@ -888,8 +888,8 @@ app.post('/signup', (req, res) => {
       return res.status(500).json({ message: "Error hashing password" });
     }
 
-    const query = `INSERT INTO users (email, password, full_name, created_at, updated_at, giftpoints, nb_trashthrown , isbanned) 
-                   VALUES (?, ?, ?, NOW(), NOW(), 0, 0,1)`;
+    const query = `INSERT INTO users (email, password, full_name, created_at, updated_at, giftpoints, nb_trashthrown , isbanned , role) 
+                   VALUES (?, ?, ?, NOW(), NOW(), 0, 0,1 , 'user')`;
 
     db.query(query, [email, hashedPassword, full_name], (err, result) => {
       if (err) {
