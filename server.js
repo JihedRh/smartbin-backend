@@ -34,7 +34,7 @@ app.post('/api/login', (req, res) => {
       const { full_name, email, role, isbanned, password: storedPassword } = results[0];
 
       if (isbanned) {
-        return res.status(403).send({ message: 'Your account has been banned. Please contact support.' });
+        return res.status(403).send({ message: 'Your account has been banned or disabled . Please contact support.' });
       }
 
       // Compare the provided password with the hashed password in the database
