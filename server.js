@@ -37,25 +37,32 @@ app.post('/api/login', (req, res) => {
         return res.status(403).send({ message: 'Your account has been banned. Please contact support.' });
       }
 
-      if (password !== storedPassword) {
-        return res.status(401).send({ message: 'Invalid email or password' });
-      }
+      // Compare the provided password with the hashed password in the database
+      bcrypt.compare(password, storedPassword, (err, isMatch) => {
+        if (err) {
+          return res.status(500).send({ message: 'Error comparing password' });
+        }
 
-      const payload = {
-        full_name,
-        email,
-        role,
-      };
+        if (!isMatch) {
+          return res.status(401).send({ message: 'Invalid email or password' });
+        }
 
-      const secretKey = 'your-secret-key';
-      const token = jwt.sign(payload, secretKey, { expiresIn: '1h' });
+        const payload = {
+          full_name,
+          email,
+          role,
+        };
 
-      res.status(200).send({ 
-        message: 'Login successful!',
-        token,
-        full_name, 
-        email,
-        role
+        const secretKey = 'your-secret-key';
+        const token = jwt.sign(payload, secretKey, { expiresIn: '1h' });
+
+        res.status(200).send({ 
+          message: 'Login successful!',
+          token,
+          full_name, 
+          email,
+          role
+        });
       });
     } else {
       res.status(401).send({ message: 'Invalid email or password' });
