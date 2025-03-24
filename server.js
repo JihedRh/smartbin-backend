@@ -879,7 +879,7 @@ app.get('/api/notifications', (req, res) => {
 
 app.put('/api/notifications/:id', (req, res) => {
   const { id } = req.params;
-  const query = 'UPDATE notifications SET statut = "read" WHERE id = ?';
+  const query = 'UPDATE notifications SET is_unread = 0 WHERE id = ?';
   db.query(query, [id], (error, results) => {
     if (error) {
       console.error('Error updating notification:', error);
