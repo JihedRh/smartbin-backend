@@ -916,8 +916,8 @@ app.post('/signup', (req, res) => {
       const userId = result.insertId;
 
       const notificationQuery = `
-        INSERT INTO notifications ( type, title, description, isUnRead, postedAt) 
-        VALUES (?, ?, ?, ?, ?, NOW())`;
+        INSERT INTO notifications ( type, title, description, is_unread, posted_at) 
+        VALUES ( ?, ?, ?, ?, NOW())`;
 
       const notificationData = [
         'mail', 
