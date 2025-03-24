@@ -903,8 +903,9 @@ app.post('/signup', (req, res) => {
       return res.status(500).json({ message: "Error hashing password" });
     }
 
-    const query = `INSERT INTO users (email, password, full_name, created_at, updated_at, giftpoints, nb_trashthrown , isbanned , role) 
-                   VALUES (?, ?, ?, NOW(), NOW(), 0, 0,1 , 'user')`;
+    const query = `
+      INSERT INTO users (email, password, full_name, created_at, updated_at, giftpoints, nb_trashthrown, isbanned, role) 
+      VALUES (?, ?, ?, NOW(), NOW(), 0, 0, 1, 'user')`;
 
     db.query(query, [email, hashedPassword, full_name], (err, result) => {
       if (err) {
@@ -912,7 +913,27 @@ app.post('/signup', (req, res) => {
         return res.status(500).json({ message: "Error inserting user into database" });
       }
 
-      res.status(201).json({ message: "User registered successfully" });
+      const userId = result.insertId;
+
+      const notificationQuery = `
+        INSERT INTO notifications ( type, title, description, isUnRead, postedAt) 
+        VALUES (?, ?, ?, ?, ?, NOW())`;
+
+      const notificationData = [
+        'mail', 
+        `Welcome, ${full_name}`, 
+        `New user ${full_name} has signed up with access level 'user'`, 
+        1 
+      ];
+
+      db.query(notificationQuery, notificationData, (err) => {
+        if (err) {
+          console.error("Error inserting notification:", err);
+          return res.status(500).json({ message: "Error inserting notification into database" });
+        }
+
+        res.status(201).json({ message: "User registered successfully" });
+      });
     });
   });
 });
