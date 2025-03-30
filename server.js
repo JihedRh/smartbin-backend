@@ -156,7 +156,7 @@ app.put('/api/users/:id', (req, res) => {
     const notificationData = [
       'update', 
       `${full_name} - User Updated`, // Title now includes user's name
-      `${full_name} has updated their profile`, 
+      `${full_name} 's profile has been updated  `, 
       1
     ];
 
