@@ -123,16 +123,15 @@ app.post('/api/login', (req, res) => {
 
 app.put('/api/users/:id', (req, res) => {
   const { id } = req.params;
-  const { email, password, full_name } = req.body;
+  const { email, full_name } = req.body;
 
-  if (!email || !password || !full_name) {
-    return res.status(400).json({ message: 'Email, password, and full name are required' });
+  if (!email || !full_name) {
+    return res.status(400).json({ message: 'Email and full name are required' });
   }
 
   const query = `
     UPDATE users
-    SET email = ?, 
-     full_name = ?, updated_at = NOW()
+    SET email = ?, full_name = ?, updated_at = NOW()
     WHERE id = ?
   `;
 
@@ -143,12 +142,35 @@ app.put('/api/users/:id', (req, res) => {
       console.error('Error updating user:', err);
       return res.status(500).json({ message: 'Server error' });
     }
+
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'User not found' });
     }
-    res.status(200).json({ message: 'User updated successfully' });
+
+    // Insert into notifications after successful update
+    const notificationQuery = `
+      INSERT INTO notifications (type, title, description, is_unread, posted_at) 
+      VALUES (?, ?, ?, ?, NOW())
+    `;
+
+    const notificationData = [
+      'update', 
+      `${full_name} - User Updated`, // Title now includes user's name
+      `${full_name} has updated their profile`, 
+      1
+    ];
+
+    db.query(notificationQuery, notificationData, (err) => {
+      if (err) {
+        console.error('Error inserting notification:', err);
+        return res.status(500).json({ message: 'User updated, but failed to add notification' });
+      }
+
+      res.status(200).json({ message: 'User updated successfully and notification added' });
+    });
   });
 });
+
 
 
   app.delete('/api/users/:id', (req, res) => {
