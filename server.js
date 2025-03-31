@@ -150,14 +150,14 @@ app.put('/api/users/:id', (req, res) => {
     // Insert into notifications after successful update
     const notificationQuery = `
       INSERT INTO notifications (type, title, description, is_unread, posted_at , forrr) 
-      VALUES (?, ?, ?, ?, NOW())
+      VALUES (?, ?, ?, ?, NOW() , ?)
     `;
 
     const notificationData = [
       'update', 
       `${full_name} - User Updated`, // Title now includes user's name
       `${full_name} 's profile has been updated  `, 
-      1
+      1 , full_name
     ];
 
     db.query(notificationQuery, notificationData, (err) => {
@@ -926,8 +926,8 @@ app.post('/signup', (req, res) => {
     }
 
     const query = `
-      INSERT INTO users (email, password, full_name, created_at, updated_at, giftpoints, nb_trashthrown, isbanned, role , forrr) 
-      VALUES (?, ?, ?, NOW(), NOW(), 0, 0, 1, 'user' , ?)`;
+      INSERT INTO users (email, password, full_name, created_at, updated_at, giftpoints, nb_trashthrown, isbanned, role ) 
+      VALUES (?, ?, ?, NOW(), NOW(), 0, 0, 1, 'user' )`;
 
     db.query(query, [email, hashedPassword, full_name , full_name], (err, result) => {
       if (err) {
@@ -938,14 +938,14 @@ app.post('/signup', (req, res) => {
       const userId = result.insertId;
 
       const notificationQuery = `
-        INSERT INTO notifications ( type, title, description, is_unread, posted_at) 
-        VALUES ( ?, ?, ?, ?, NOW())`;
+        INSERT INTO notifications ( type, title, description, is_unread, posted_at , forrr) 
+        VALUES ( ?, ?, ?, ?, NOW() , ?)`;
 
       const notificationData = [
         'mail', 
         `Welcome, ${full_name}`, 
-        `New user ${full_name} has signed up with access level 'user'`, 
-        1 
+        `New user ${full_name} has signed up `, 
+        1  , full_name
       ];
 
       db.query(notificationQuery, notificationData, (err) => {
