@@ -186,7 +186,7 @@ app.put('/api/users/:id', (req, res) => {
   });
   
   app.delete('/api/users', (req, res) => {
-    const { ids } = req.body; 
+    const { ids } = req.body;
   
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
       return res.status(400).json({ message: 'No user IDs provided' });
@@ -200,9 +200,31 @@ app.put('/api/users/:id', (req, res) => {
         console.error('Error deleting users:', err);
         return res.status(500).json({ message: 'Error deleting users from database' });
       }
-      res.status(200).json({ message: `${result.affectedRows} users deleted successfully` });
+  
+      // Insert notification after deletion
+      const notificationQuery = `
+        INSERT INTO notifications (type, title, description, is_unread, posted_at, forrr) 
+        VALUES (?, ?, ?, ?, NOW(), ?)`;
+  
+      const notificationData = [
+        'system',
+        `Users deleted`,
+        `${result.affectedRows} users have been deleted.`,
+        1,
+        'admin'
+      ];
+  
+      db.query(notificationQuery, notificationData, (err) => {
+        if (err) {
+          console.error("Error inserting notification:", err);
+          return res.status(500).json({ message: "Error inserting notification into database" });
+        }
+  
+        res.status(200).json({ message: `${result.affectedRows} users deleted successfully` });
+      });
     });
   });
+  
 
   app.get('/api/smart-bins/no-ok', (req, res) => {
     const query = `SELECT COUNT(*) AS count FROM smart_trash_bin WHERE functionality = 'no ok'`;
@@ -351,8 +373,7 @@ app.delete('/api/trashbin/:id', (req, res) => {
   // Delete the trash bin completely from the database
   const deleteQuery = `
     DELETE FROM smart_trash_bin 
-    WHERE id = ?
-  `;
+    WHERE id = ?`;
 
   db.query(disableForeignKeyChecksQuery, (error) => {
     if (error) {
@@ -370,13 +391,32 @@ app.delete('/api/trashbin/:id', (req, res) => {
         return res.status(404).json({ error: 'Trash bin not found' });
       }
 
-      db.query(enableForeignKeyChecksQuery, (error) => {
-        if (error) {
-          console.error('Error enabling foreign key checks:', error);
-          return res.status(500).json({ error: 'Internal Server Error' });
+      const notificationQuery = `
+        INSERT INTO notifications (type, title, description, is_unread, posted_at, forrr) 
+        VALUES (?, ?, ?, ?, NOW(), ?)`;
+
+      const notificationData = [
+        'system',
+        `Trash bin deleted`,
+        `Trash bin with ID ${id} has been permanently deleted.`,
+        1,
+        'manager'
+      ];
+
+      db.query(notificationQuery, notificationData, (err) => {
+        if (err) {
+          console.error("Error inserting notification:", err);
+          return res.status(500).json({ message: "Error inserting notification into database" });
         }
 
-        res.status(200).json({ message: 'Trash bin permanently deleted' });
+        db.query(enableForeignKeyChecksQuery, (error) => {
+          if (error) {
+            console.error('Error enabling foreign key checks:', error);
+            return res.status(500).json({ error: 'Internal Server Error' });
+          }
+
+          res.status(200).json({ message: 'Trash bin permanently deleted' });
+        });
       });
     });
   });
@@ -720,28 +760,48 @@ app.get("/api/bins/locations", (req, res) => {
 
 
 app.post("/api/hospitals", (req, res) => {
-  const { name, address, lat, lng } = req.body; 
+  const { name, address, lat, lng } = req.body;
 
   if (!name || !address || !lat || !lng) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
-  const location = `POINT(${lat} ${lng})`; 
+  const location = `POINT(${lat} ${lng})`;
 
-  const query = `INSERT INTO hospitals (name, address, lat , lng) VALUES (?, ?, ?, ?)`;
+  const query = `INSERT INTO hospitals (name, address, lat, lng) VALUES (?, ?, ?, ?)`;
 
-  db.query(query, [name, address, lat , lng], (err, result) => {
+  db.query(query, [name, address, lat, lng], (err, result) => {
     if (err) {
       console.error("Error inserting hospital data: ", err);
       return res.status(500).json({ error: "Failed to add hospital" });
     }
 
-    res.status(201).json({
-      message: "Hospital added successfully",
-      hospitalId: result.insertId,
+    const notificationQuery = `
+      INSERT INTO notifications (type, title, description, is_unread, posted_at, forrr) 
+      VALUES (?, ?, ?, ?, NOW(), ?)`;
+
+    const notificationData = [
+      'system',
+      `New hospital added`,
+      `A new hospital with the name ${name} has been added.`,
+      1,
+      'manager',
+    ];
+
+    db.query(notificationQuery, notificationData, (err) => {
+      if (err) {
+        console.error("Error inserting notification:", err);
+        return res.status(500).json({ message: "Error inserting notification into database" });
+      }
+
+      res.status(201).json({
+        message: "Hospital added successfully",
+        hospitalId: result.insertId,
+      });
     });
   });
 });
+
 
 app.get('/api/hospitals/:hospitalId', (req, res) => {
   const { hospitalId } = req.params;
@@ -833,10 +893,28 @@ app.post('/api/hospitals/:hospitalId/add-bin', (req, res) => {
         return res.status(500).json({ message: 'Error adding bin' });
       }
 
-      res.status(200).json({ message: 'Bin added to hospital successfully!' });
+      const notificationQuery = `
+        INSERT INTO notifications (type, title, description, is_unread, posted_at, forrr) 
+        VALUES (?, ?, ?, ?, NOW(), ?)`;
+
+      const notificationData = [
+        'system', 
+        `Bin added to hospital`, 
+        `Bin with reference ${binReference} has been added to hospital ID ${hospitalId}.`, 
+        1, 'manager'
+      ];
+
+      db.query(notificationQuery, notificationData, (err) => {
+        if (err) {
+          console.error("Error inserting notification:", err);
+          return res.status(500).json({ message: "Error inserting notification into database" });
+        }
+        res.status(200).json({ message: 'Bin added to hospital successfully!' });
+      });
     });
   });
 });
+
 
 app.delete('/api/hospitals/:hospitalId/delete-bin', (req, res) => {
   const { hospitalId } = req.params;
@@ -868,10 +946,28 @@ app.delete('/api/hospitals/:hospitalId/delete-bin', (req, res) => {
         return res.status(500).json({ message: 'Error deleting bin' });
       }
 
-      res.status(200).json({ message: 'Bin deleted from hospital successfully!' });
+      const notificationQuery = `
+        INSERT INTO notifications ( type, title, description, is_unread, posted_at, forrr) 
+        VALUES ( ?, ?, ?, ?, NOW(), ?)`;
+
+      const notificationData = [
+        'system', 
+        `Bin removed from hospital`, 
+        `Bin with reference ${binReference} has been removed from hospital ID ${hospitalId}.`, 
+        1, 'manager'
+      ];
+
+      db.query(notificationQuery, notificationData, (err) => {
+        if (err) {
+          console.error("Error inserting notification:", err);
+          return res.status(500).json({ message: "Error inserting notification into database" });
+        }
+        res.status(200).json({ message: 'Bin deleted from hospital successfully!' });
+      });
     });
   });
 });
+
 
 app.get('/api/smart-trash-bin/types', (req, res) => {
   const query = 'SELECT CAST(type AS CHAR) AS type, COUNT(*) AS count FROM smart_trash_bin GROUP BY type';
@@ -976,7 +1072,27 @@ app.put('/api/users/:id/status', (req, res) => {
       console.error('Error updating user status:', err);
       return res.status(500).json({ message: 'Server error' });
     }
-    res.status(200).json({ message: 'User status updated successfully' });
+
+    const statusText = isbanned ? 'banned' : 'unbanned';
+
+    const notificationQuery = `
+      INSERT INTO notifications ( type, title, description, is_unread, posted_at , forrr) 
+      VALUES ( ?, ?, ?, ?, NOW(), ?)`;
+
+    const notificationData = [
+      'system', 
+      `User status updated`, 
+      `User with ID ${id} has been ${statusText}.`, 
+      1, 'admin'
+    ];
+
+    db.query(notificationQuery, notificationData, (err) => {
+      if (err) {
+        console.error("Error inserting notification:", err);
+        return res.status(500).json({ message: "Error inserting notification into database" });
+      }
+      res.status(200).json({ message: `User status updated to ${statusText}` });
+    });
   });
 });
 
