@@ -521,8 +521,8 @@ app.get('/api/smart-trash-bins', (req, res) => {
       bin_values.timestamp
     FROM smart_trash_bin bin
     LEFT JOIN bin_values bin_values ON bin.reference = bin_values.reference
-    WHERE bin_values.timestamp = (
-      SELECT MAX(timestamp) 
+    WHERE bin_values.id = (
+      SELECT MAX(id) 
       FROM bin_values 
       WHERE reference = bin.reference
     )
@@ -536,6 +536,7 @@ app.get('/api/smart-trash-bins', (req, res) => {
     }
   });
 });
+
 
 
 app.post('/api/smart-trash-bins', (req, res) => {
