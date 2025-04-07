@@ -22,19 +22,44 @@ const bcrypt = require('bcryptjs');
 app.post("/insert", (req, res) => {
   const { co2_level, temperature, humidity, fill_level } = req.body;
 
-  const sql = `
+  let statut;
+  if (fill_level < 50) {
+    statut = 'empty';
+  } else if (fill_level >= 50 && fill_level <= 80) {
+    statut = 'almost full';
+  } else if (fill_level > 80) {
+    statut = 'full';
+  }
+
+  const insertSql = `
     INSERT INTO bin_values 
     (co2_level, temperature, humidity, fill_level, reference) 
     VALUES (?, ?, ?, ?, 'BIN-003')
   `;
-  db.query(sql, [co2_level, temperature, humidity, fill_level], (err, result) => {
+
+  db.query(insertSql, [co2_level, temperature, humidity, fill_level], (err, result) => {
     if (err) {
       console.error("Insert error:", err);
       return res.status(500).send("DB error");
     }
-    res.send("Data inserted successfully!");
+
+    const updateSql = `
+      UPDATE smart_trash_bin 
+      SET statut = ? 
+      WHERE reference = 'BIN-003'
+    `;
+
+    db.query(updateSql, [statut], (err, result) => {
+      if (err) {
+        console.error("Update error:", err);
+        return res.status(500).send("DB update error");
+      }
+      
+      res.send("Data inserted and bin status updated successfully!");
+    });
   });
 });
+
 
 app.post('/api/login', (req, res) => {
   const { email, password } = req.body;
