@@ -520,12 +520,13 @@ app.get('/api/smart-trash-bins', (req, res) => {
       bin_values.fill_level, 
       bin_values.timestamp
     FROM smart_trash_bin bin
-    LEFT JOIN bin_values bin_values ON bin.reference = bin_values.reference
-    WHERE bin_values.id = (
-      SELECT MAX(id) 
-      FROM bin_values 
-      WHERE reference = bin.reference
-    )
+    LEFT JOIN bin_values bin_values 
+      ON bin.reference = bin_values.reference 
+      AND bin_values.id = (
+        SELECT MAX(id) 
+        FROM bin_values 
+        WHERE reference = bin.reference
+      )
   `;
   
   db.query(query, (err, results) => {
@@ -536,7 +537,6 @@ app.get('/api/smart-trash-bins', (req, res) => {
     }
   });
 });
-
 
 
 app.post('/api/smart-trash-bins', (req, res) => {
