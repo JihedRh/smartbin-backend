@@ -19,6 +19,23 @@ const db = mysql.createConnection({
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
+app.post("/insert", (req, res) => {
+  const { co2_level, temperature, humidity, fill_level } = req.body;
+
+  const sql = `
+    INSERT INTO bin_values 
+    (co2_level, temperature, humidity, fill_level, reference) 
+    VALUES (?, ?, ?, ?, 'BIN-003')
+  `;
+  db.query(sql, [co2_level, temperature, humidity, fill_level], (err, result) => {
+    if (err) {
+      console.error("Insert error:", err);
+      return res.status(500).send("DB error");
+    }
+    res.send("Data inserted successfully!");
+  });
+});
+
 app.post('/api/login', (req, res) => {
   const { email, password } = req.body;
 
