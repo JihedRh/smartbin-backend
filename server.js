@@ -20,43 +20,50 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
 app.post("/insert", (req, res) => {
-  const { co2_level, temperature, humidity, fill_level } = req.body;
-
-  let statut;
-  if (fill_level < 50) {
-    statut = 'empty';
-  } else if (fill_level >= 50 && fill_level <= 80) {
-    statut = 'almost full';
-  } else if (fill_level > 80) {
-    statut = 'full';
-  }
+  const dataArray = Array.isArray(req.body) ? req.body : [req.body];
 
   const insertSql = `
     INSERT INTO bin_values 
     (co2_level, temperature, humidity, fill_level, reference) 
-    VALUES (?, ?, ?, ?, 'BIN-003')
+    VALUES ?
   `;
 
-  db.query(insertSql, [co2_level, temperature, humidity, fill_level], (err, result) => {
+  const insertValues = dataArray.map(({ co2_level, temperature, humidity, fill_level, reference }) => [
+    co2_level, temperature, humidity, fill_level, reference
+  ]);
+
+  const statuses = dataArray.map(({ fill_level, reference }) => {
+    let statut = 'empty';
+    if (fill_level >= 50 && fill_level <= 80) statut = 'almost full';
+    else if (fill_level > 80) statut = 'full';
+    return [statut, reference];
+  });
+
+  db.query(insertSql, [insertValues], (err) => {
     if (err) {
       console.error("Insert error:", err);
-      return res.status(500).send("DB error");
+      return res.status(500).send("Insert DB error");
     }
 
     const updateSql = `
       UPDATE smart_trash_bin 
       SET statut = ? 
-      WHERE reference = 'BIN-003'
+      WHERE reference = ?
     `;
 
-    db.query(updateSql, [statut], (err, result) => {
-      if (err) {
-        console.error("Update error:", err);
-        return res.status(500).send("DB update error");
-      }
-      
-      res.send("Data inserted and bin status updated successfully!");
-    });
+    const updateNext = (i = 0) => {
+      if (i >= statuses.length) return res.send("Batch insert and bin statuses updated");
+
+      db.query(updateSql, statuses[i], (err) => {
+        if (err) {
+          console.error("Update error:", err);
+          return res.status(500).send("Update DB error");
+        }
+        updateNext(i + 1);
+      });
+    };
+
+    updateNext();
   });
 });
 
