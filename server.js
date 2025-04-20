@@ -27,7 +27,6 @@ app.post("/insert", (req, res) => {
     (co2_level, temperature, humidity, fill_level, reference) 
     VALUES ?
   `;
-
   const insertValues = dataArray.map(({ co2_level, temperature, humidity, fill_level, reference }) => [
     co2_level, temperature, humidity, fill_level, reference
   ]);
@@ -39,31 +38,27 @@ app.post("/insert", (req, res) => {
     return [statut, reference];
   });
 
+  // Insert values into bin_values
   db.query(insertSql, [insertValues], (err) => {
     if (err) {
       console.error("Insert error:", err);
       return res.status(500).send("Insert DB error");
     }
 
+    // Update statuses in bulk
     const updateSql = `
       UPDATE smart_trash_bin 
-      SET statut = ? 
-      WHERE reference = ?
+      SET statut = CASE reference
+        ${statuses.map(({ statut, reference }) => `WHEN '${reference}' THEN '${statut}'`).join(' ')}
+      END
     `;
-
-    const updateNext = (i = 0) => {
-      if (i >= statuses.length) return res.send("Batch insert and bin statuses updated");
-
-      db.query(updateSql, statuses[i], (err) => {
-        if (err) {
-          console.error("Update error:", err);
-          return res.status(500).send("Update DB error");
-        }
-        updateNext(i + 1);
-      });
-    };
-
-    updateNext();
+    db.query(updateSql, (err) => {
+      if (err) {
+        console.error("Update error:", err);
+        return res.status(500).send("Update DB error");
+      }
+      res.send("Batch insert and bin statuses updated");
+    });
   });
 });
 
