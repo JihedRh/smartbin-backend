@@ -97,8 +97,8 @@ app.post('/api/login', (req, res) => {
           role,
         };
 
-        const secretKey = 'your-secret-key';
-        const token = jwt.sign(payload, secretKey, { expiresIn: '1h' });
+        const secretKey = '7874fyyvgvgvyvyvg454444ygygkinzzllfdllfdkkfkd';
+        const token = jwt.sign(payload, secretKey, { expiresIn: '24h' });
 
         res.status(200).send({ 
           message: 'Login successful!',
