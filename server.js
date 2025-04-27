@@ -18,7 +18,55 @@ const db = mysql.createConnection({
 
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+app.post('/api/updateUserPoints', (req, res) => {
+  const { id, giftpoints } = req.body;
 
+  // SQL query to get user data by id
+  const query = 'SELECT id, email, password, full_name, created_at, updated_at, giftpoints, nb_trashthrown, smart_bin_id, role, isbanned FROM users WHERE id = ?';
+
+  db.query(query, [id], (err, results) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).send({ message: 'Server error' });
+    }
+
+    if (results.length > 0) {
+      const user = results[0];
+
+      // Check if the user is banned
+      if (user.isbanned) {
+        return res.status(403).send({ message: 'Your account has been banned or disabled. Please contact support.' });
+      }
+
+      // Calculate the new values for nb_trashthrown and giftpoints
+      const newNbTrashThrown = user.nb_trashthrown + 1;
+      const newGiftPoints = user.giftpoints + giftpoints;
+
+      // Update the user's nb_trashthrown and giftpoints in the database
+      const updateQuery = `
+        UPDATE users 
+        SET nb_trashthrown = ?, giftpoints = ?, updated_at = NOW() 
+        WHERE id = ?
+      `;
+
+      db.query(updateQuery, [newNbTrashThrown, newGiftPoints, id], (updateErr) => {
+        if (updateErr) {
+          console.error('Error updating user:', updateErr);
+          return res.status(500).send({ message: 'Error updating user data' });
+        }
+
+        // Return the updated full_name and total giftpoints
+        res.status(200).send({
+          message: 'User updated successfully!',
+          full_name: user.full_name,
+          total_giftpoints: newGiftPoints,
+        });
+      });
+    } else {
+      res.status(404).send({ message: 'User not found' });
+    }
+  });
+});
 app.post("/insert", (req, res) => {
   const dataArray = Array.isArray(req.body) ? req.body : [req.body];
 
