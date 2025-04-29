@@ -114,6 +114,7 @@ app.post("/insert", (req, res) => {
 app.post('/api/login', (req, res) => {
   const { email, password } = req.body;
 
+  
   const query = 'SELECT full_name, email, role, isbanned, password FROM users WHERE email = ?';
 
   db.query(query, [email], (err, results) => {
@@ -153,7 +154,8 @@ app.post('/api/login', (req, res) => {
           token,
           full_name, 
           email,
-          role
+          role , 
+          user_code
         });
       });
     } else {
