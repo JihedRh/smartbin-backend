@@ -115,7 +115,7 @@ app.post('/api/login', (req, res) => {
   const { email, password } = req.body;
 
   
-  const query = 'SELECT full_name, email, role, isbanned, password FROM users WHERE email = ?';
+  const query = 'SELECT full_name, email, role, isbanned,user_code, password FROM users WHERE email = ?';
 
   db.query(query, [email], (err, results) => {
     if (err) {
@@ -124,7 +124,7 @@ app.post('/api/login', (req, res) => {
     }
 
     if (results.length > 0) {
-      const { full_name, email, role, isbanned, password: storedPassword } = results[0];
+      const { full_name, email, role,user_code ,  isbanned, password: storedPassword } = results[0];
 
       if (isbanned) {
         return res.status(403).send({ message: 'Your account has been banned or disabled . Please contact support.' });
