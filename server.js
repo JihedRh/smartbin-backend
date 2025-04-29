@@ -1111,16 +1111,18 @@ app.post('/signup', (req, res) => {
     return res.status(400).json({ message: "Passwords do not match" });
   }
 
+  const user_code = generateUserCode(); // 🔐 Generate the 12-character code
+
   bcrypt.hash(password, 10, (err, hashedPassword) => {
     if (err) {
       return res.status(500).json({ message: "Error hashing password" });
     }
 
     const query = `
-      INSERT INTO users (email, password, full_name, created_at, updated_at, giftpoints, nb_trashthrown, isbanned, role ) 
-      VALUES (?, ?, ?, NOW(), NOW(), 0, 0, 1, 'user' )`;
+      INSERT INTO users (email, password, full_name, created_at, updated_at, giftpoints, nb_trashthrown, isbanned, role, user_code) 
+      VALUES (?, ?, ?, NOW(), NOW(), 0, 0, 1, 'user', ?)`;
 
-    db.query(query, [email, hashedPassword, full_name , full_name], (err, result) => {
+    db.query(query, [email, hashedPassword, full_name, user_code], (err, result) => {
       if (err) {
         console.error(err);
         return res.status(500).json({ message: "Error inserting user into database" });
@@ -1130,13 +1132,14 @@ app.post('/signup', (req, res) => {
 
       const notificationQuery = `
         INSERT INTO notifications ( type, title, description, is_unread, posted_at , forrr) 
-        VALUES ( ?, ?, ?, ?, NOW() , ?)`;
+        VALUES (?, ?, ?, ?, NOW(), ?)`;
 
       const notificationData = [
         'mail', 
         `Welcome, ${full_name}`, 
-        `New user ${full_name} has signed up `, 
-        1  , full_name
+        `New user ${full_name} has signed up`, 
+        1,
+        full_name
       ];
 
       db.query(notificationQuery, notificationData, (err) => {
