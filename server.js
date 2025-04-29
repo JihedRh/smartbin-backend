@@ -1102,6 +1102,15 @@ app.put('/api/notifications/:id', (req, res) => {
   });
 });
 
+function generateUserCode(length = 12) {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let code = '';
+  for (let i = 0; i < length; i++) {
+    code += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return code;
+}
+
 app.post('/signup', (req, res) => {
   console.log("Signup route hit"); 
 
@@ -1111,7 +1120,7 @@ app.post('/signup', (req, res) => {
     return res.status(400).json({ message: "Passwords do not match" });
   }
 
-  const user_code = generateUserCode(); // 🔐 Generate the 12-character code
+  const user_code = generateUserCode(); // Generate code
 
   bcrypt.hash(password, 10, (err, hashedPassword) => {
     if (err) {
@@ -1148,7 +1157,11 @@ app.post('/signup', (req, res) => {
           return res.status(500).json({ message: "Error inserting notification into database" });
         }
 
-        res.status(201).json({ message: "User registered successfully" });
+        // ✅ Send the user_code in the response
+        res.status(201).json({ 
+          message: "User registered successfully", 
+          user_code: user_code 
+        });
       });
     });
   });
