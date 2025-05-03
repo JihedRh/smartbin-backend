@@ -1246,6 +1246,52 @@ app.put('/apii/user/update', (req, res) => {
   });
 });
 
+// Upload profile image
+app.post('/upload-profile-image', upload.single('image'), async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'Aucune image fournie' });
+    }
+
+    const { user_code } = req.body;
+    const fileName = req.file.filename;
+
+    db.query('UPDATE users SET profile_image = ? WHERE user_code = ?',
+        [fileName, user_code],
+        (err, result) => {
+            if (err) {
+                return res.status(500).json({ error: 'Erreur lors de la mise à jour de l\'image' });
+            }
+            res.json({ 
+                message: 'Image mise à jour avec succès',
+                file_path: fileName
+            });
+        }
+    );
+});
+
+// Fetch user's profile image by email
+app.get('/user/:email/profile-image', (req, res) => {
+    const { email } = req.params; // Get the email from the route parameter
+
+    // Query to fetch user details, including the profile_image
+    db.query('SELECT profile_image FROM users WHERE email = ?', [email], (err, results) => {
+        if (err) {
+            return res.status(500).json({ error: 'Database error' });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Construct the full URL or path for the profile image
+        const profileImagePath = `${req.protocol}://${req.get('host')}/uploads/${results[0].profile_image}`;
+
+        res.json({
+            profile_image: profileImagePath // Return the complete image URL
+        });
+    });
+});
+
 
 app.listen(7001 , ()=> {
     console.log("listening.");
