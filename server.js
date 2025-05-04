@@ -195,6 +195,44 @@ app.get('/api/users/:email', (req, res) => {
   });
 });
 
+app.get('/api/users/giftpoints/:email', (req, res) => {
+  const email = req.params.email;
+  const query = 'SELECT giftpoints FROM users WHERE email = ?';
+
+  db.query(query, [email], (err, results) => {
+    if (err) {
+      console.error('Error fetching giftpoints by email:', err);
+      res.status(500).send('Server error');
+    } else if (results.length === 0) {
+      res.status(404).send('Data not found');
+    } else {
+      res.json(results[0]); // Send the first matched user
+    }
+  });
+});
+
+app.post('/upload-profile-image', upload.single('image'), (req, res) => {
+    const email = req.body.email;
+    const file = req.file;
+  
+    if (!email || !file) {
+      return res.status(400).json({ message: 'Email or image not provided.' });
+    }
+  
+    const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${file.filename}`;
+  
+    const query = 'UPDATE users SET profile_image = ? WHERE email = ?';
+    db.query(query, [imageUrl, email], (err, result) => {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ message: 'Database error.' });
+      }
+  
+      return res.status(200).json({ message: 'Profile image updated.', imageUrl });
+    });
+  });
+  
+
   
 
 
