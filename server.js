@@ -177,6 +177,24 @@ app.post('/api/login', (req, res) => {
       }
     });
   });
+
+
+app.get('/api/users/:email', (req, res) => {
+  const email = req.params.email;
+  const query = 'SELECT * FROM users WHERE email = ?';
+
+  db.query(query, [email], (err, results) => {
+    if (err) {
+      console.error('Error fetching user by email:', err);
+      res.status(500).send('Server error');
+    } else if (results.length === 0) {
+      res.status(404).send('User not found');
+    } else {
+      res.json(results[0]); // Send the first matched user
+    }
+  });
+});
+
   
 
 
