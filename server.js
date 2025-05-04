@@ -230,27 +230,28 @@ app.get('/api/users/giftpoints/:email', (req, res) => {
 });
 
 app.post('/upload-profile-image', upload.single('image'), (req, res) => {
-    const email = req.body.email;
-    const file = req.file;
-  
-    if (!email || !file) {
-      return res.status(400).json({ message: 'Email or image not provided.' });
+  const email = req.body.email;
+  const file = req.file;
+
+  if (!email || !file) {
+    return res.status(400).json({ message: 'Email or image not provided.' });
+  }
+
+  const relativeImagePath = `/uploads/${file.filename}`;
+
+  const query = 'UPDATE users SET profile_image = ? WHERE email = ?';
+  db.query(query, [relativeImagePath, email], (err, result) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).json({ message: 'Database error.' });
     }
-  
-    const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${file.filename}`;
-  
-    const query = 'UPDATE users SET profile_image = ? WHERE email = ?';
-    db.query(query, [imageUrl, email], (err, result) => {
-      if (err) {
-        console.error('Database error:', err);
-        return res.status(500).json({ message: 'Database error.' });
-      }
-  
-      return res.status(200).json({ message: 'Profile image updated.', imageUrl });
+
+    return res.status(200).json({
+      message: 'Profile image uploaded successfully.',
+      profile_image: relativeImagePath, // only relative path is returned
     });
   });
-  
-
+});
   
 
 
