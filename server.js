@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const mysql = require("mysql");
 const fs = require('fs');
+const path = require('path');
 const multer = require('multer');
 require('dotenv').config();
 
