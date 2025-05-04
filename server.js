@@ -11,21 +11,20 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Configuration pour le stockage des images
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const dir = 'uploads';
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir);
-        }
-        cb(null, dir);
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + path.extname(file.originalname));
-    }
-});
+// Serve static files from "uploads"
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-const upload = multer({ storage: storage });
+// Multer setup
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/'); // Save to 'uploads/' folder
+  },
+  filename: function (req, file, cb) {
+    const uniqueName = Date.now() + path.extname(file.originalname); // e.g., 1746383211526.jpg
+    cb(null, uniqueName);
+  }
+});
+const upload = multer({ storage });
 
 const db = mysql.createConnection({
   host: process.env.HOST,
