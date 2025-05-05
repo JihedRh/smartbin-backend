@@ -266,6 +266,24 @@ app.post('/upload-profile-image', upload.single('image'), (req, res) => {
     });
   });
 
+// Route to get bins with reference and fill_level
+app.get('/bins/fill-level', (req, res) => {
+  const query = `
+    SELECT reference, fill_level 
+    FROM bin_values
+    ORDER BY timestamp DESC;
+  `;
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Query error:', err);
+      return res.status(500).json({ error: 'Database query failed' });
+    }
+
+    res.json(results);
+  });
+});
+
   app.get('/api/bin-count', (req, res) => {
     const query = 'SELECT COUNT(*) AS count FROM smart_trash_bin';  
     db.query(query, (err, result) => {
