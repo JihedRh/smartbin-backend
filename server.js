@@ -266,6 +266,24 @@ app.post('/upload-profile-image', upload.single('image'), (req, res) => {
     });
   });
 
+app.get('/api/user/:email', (req, res) => {
+  const { email } = req.params;
+
+  if (!email) {
+    return res.status(400).json({ error: 'Email parameter is required' });
+  }
+
+  const query = `SELECT role FROM users WHERE email = ?`;
+
+  db.query(query, [email], (err, results) => {
+    if (err) {
+      console.error('Error fetching bin data:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json(results);
+  });
+});
+
 // Route to get bins with reference and fill_level
 app.get('/bins/fill-level', (req, res) => {
   const query = `
