@@ -229,6 +229,29 @@ app.get('/api/users/giftpoints/:email', (req, res) => {
   });
 });
 
+app.put('/api/user/points-goal', (req, res) => {
+  const { email, points_goal } = req.body;
+
+  if (!email || points_goal === undefined) {
+    return res.status(400).json({ error: 'Email and points_goal are required' });
+  }
+
+  const query = 'UPDATE users SET points_goal = ? WHERE email = ?';
+
+  db.query(query, [points_goal, email], (err, result) => {
+    if (err) {
+      console.error('Error updating points_goal:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ message: 'Points goal updated successfully' });
+  });
+});
+
 app.post('/upload-profile-image', upload.single('image'), (req, res) => {
   const email = req.body.email;
   const file = req.file;
