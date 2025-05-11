@@ -229,6 +229,22 @@ app.get('/api/users/giftpoints/:email', (req, res) => {
   });
 });
 
+app.get('/api/users/points-goal/:email', (req, res) => {
+  const email = req.params.email;
+  const query = 'SELECT points_goal FROM users WHERE email = ?';
+
+  db.query(query, [email], (err, results) => {
+    if (err) {
+      console.error('Error fetching points goal by email:', err);
+      res.status(500).send('Server error');
+    } else if (results.length === 0) {
+      res.status(404).send('Data not found');
+    } else {
+      res.json(results[0]); // Send the first matched user
+    }
+  });
+});
+
 app.put('/api/user/points-goal', (req, res) => {
   const { email, points_goal } = req.body;
 
