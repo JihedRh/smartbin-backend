@@ -37,12 +37,12 @@ const db = mysql.createConnection({
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 app.post('/api/updateUserPoints', (req, res) => {
-  const { id, giftpoints } = req.body;
+  const { user_code, giftpoints } = req.body;
 
   // SQL query to get user data by id
-  const query = 'SELECT id, email, password, full_name, created_at, updated_at, giftpoints, nb_trashthrown, smart_bin_id, role, isbanned FROM users WHERE id = ?';
+  const query = 'SELECT id, email, password, full_name, created_at, updated_at, giftpoints, nb_trashthrown, smart_bin_id, role, isbanned FROM users WHERE user_code = ?';
 
-  db.query(query, [id], (err, results) => {
+  db.query(query, [user_code], (err, results) => {
     if (err) {
       console.error('Database error:', err);
       return res.status(500).send({ message: 'Server error' });
@@ -64,10 +64,10 @@ app.post('/api/updateUserPoints', (req, res) => {
       const updateQuery = `
         UPDATE users 
         SET nb_trashthrown = ?, giftpoints = ?, updated_at = NOW() 
-        WHERE id = ?
+        WHERE user_code = ?
       `;
 
-      db.query(updateQuery, [newNbTrashThrown, newGiftPoints, id], (updateErr) => {
+      db.query(updateQuery, [newNbTrashThrown, newGiftPoints, user_code], (updateErr) => {
         if (updateErr) {
           console.error('Error updating user:', updateErr);
           return res.status(500).send({ message: 'Error updating user data' });
