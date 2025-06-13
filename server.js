@@ -213,6 +213,23 @@ app.get('/api/users/:email', (req, res) => {
   });
 });
 
+
+app.get('/api/user/username/:email', (req, res) => {
+  const email = req.params.email;
+  const query = 'SELECT full_name FROM users WHERE email = ?';
+
+  db.query(query, [email], (err, results) => {
+    if (err) {
+      console.error('Error fetching username by email:', err);
+      res.status(500).send('Server error');
+    } else if (results.length === 0) {
+      res.status(404).send('Data not found');
+    } else {
+      res.json(results[0]); // Send { username: "..." }
+    }
+  });
+});
+
 app.get('/api/users/giftpoints/:email', (req, res) => {
   const email = req.params.email;
   const query = 'SELECT giftpoints FROM users WHERE email = ?';
