@@ -85,6 +85,32 @@ app.post('/api/updateUserPoints', (req, res) => {
     }
   });
 });
+app.get('/api/binvision/:hospital_id', (req, res) => {
+  const hospitalId = req.params.hospital_id;
+
+  const query = `
+    SELECT b.reference, b.location, bv.fill_level
+    FROM smart_trash_bin b
+    LEFT JOIN (
+      SELECT reference, fill_level
+      FROM bin_values bv1
+      WHERE timestamp = (
+        SELECT MAX(timestamp)
+        FROM bin_values bv2
+        WHERE bv1.reference = bv2.reference
+      )
+    ) AS bv ON b.reference = bv.reference
+    WHERE b.hospital_id = ?
+  `;
+
+  db.query(query, [hospitalId], (err, result) => {
+    if (err) {
+      console.error("Error fetching bins:", err);
+      return res.status(500).json({ error: "Database error" });
+    }
+    res.json(result);
+  });
+});
 app.post("/insert", (req, res) => {
   const dataArray = Array.isArray(req.body) ? req.body : [req.body];
 
