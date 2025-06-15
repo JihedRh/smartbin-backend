@@ -85,32 +85,50 @@ app.post('/api/updateUserPoints', (req, res) => {
     }
   });
 });
-app.get('/api/binvision/:hospital_id', (req, res) => {
-  const hospitalId = req.params.hospital_id;
+app.get('/api/binvision/reference/:bin_reference', (req, res) => {
+  const binReference = req.params.bin_reference;
 
-  const query = `
-    SELECT b.reference, b.location, bv.fill_level
-    FROM smart_trash_bin b
-    LEFT JOIN (
-      SELECT reference, fill_level
-      FROM bin_values bv1
-      WHERE timestamp = (
-        SELECT MAX(timestamp)
-        FROM bin_values bv2
-        WHERE bv1.reference = bv2.reference
-      )
-    ) AS bv ON b.reference = bv.reference
-    WHERE b.hospital_id = ?
-  `;
+  // First, find the hospital_id for that bin reference
+  const getHospitalQuery = `SELECT hospital_id FROM smart_trash_bin WHERE reference = ? LIMIT 1`;
 
-  db.query(query, [hospitalId], (err, result) => {
+  db.query(getHospitalQuery, [binReference], (err, hospitalResult) => {
     if (err) {
-      console.error("Error fetching bins:", err);
+      console.error("Error fetching hospital id:", err);
       return res.status(500).json({ error: "Database error" });
     }
-    res.json(result);
+
+    if (hospitalResult.length === 0) {
+      return res.status(404).json({ error: "Bin reference not found" });
+    }
+
+    const hospitalId = hospitalResult[0].hospital_id;
+
+    // Now fetch all bins for that hospital_id
+    const query = `
+      SELECT b.reference, b.location, bv.fill_level
+      FROM smart_trash_bin b
+      LEFT JOIN (
+        SELECT reference, fill_level
+        FROM bin_values bv1
+        WHERE timestamp = (
+          SELECT MAX(timestamp)
+          FROM bin_values bv2
+          WHERE bv1.reference = bv2.reference
+        )
+      ) AS bv ON b.reference = bv.reference
+      WHERE b.hospital_id = ?
+    `;
+
+    db.query(query, [hospitalId], (err, result) => {
+      if (err) {
+        console.error("Error fetching bins:", err);
+        return res.status(500).json({ error: "Database error" });
+      }
+      res.json(result);
+    });
   });
 });
+
 app.post("/insert", (req, res) => {
   const dataArray = Array.isArray(req.body) ? req.body : [req.body];
 
