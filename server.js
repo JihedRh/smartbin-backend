@@ -384,6 +384,38 @@ app.get('/api/user/:email', (req, res) => {
   });
 });
 
+// Route to get bins with reference and fill_level in mobile with list
+app.get('/bins-list/fill-level', (req, res) => {
+  const { refs } = req.query;
+
+  if (!refs) {
+    return res.status(400).json({ error: 'Missing refs query parameter' });
+  }
+
+  // Split the refs into an array
+  const refList = refs.split(',');
+
+  // Build the WHERE clause dynamically
+  const conditions = refList.map(() => `reference LIKE ?`).join(' OR ');
+  const values = refList.map(ref => `${ref}-%`);
+
+  const query = `
+    SELECT reference, fill_level 
+    FROM bin_values
+    WHERE ${conditions}
+    ORDER BY timestamp DESC;
+  `;
+
+  db.query(query, values, (err, results) => {
+    if (err) {
+      console.error('Query error:', err);
+      return res.status(500).json({ error: 'Database query failed' });
+    }
+
+    res.json(results);
+  });
+});
+
 // Route to get bins with reference and fill_level
 app.get('/bins/fill-level', (req, res) => {
   const query = `
