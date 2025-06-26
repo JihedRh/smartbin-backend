@@ -911,7 +911,19 @@ app.post('/api/users', (req, res) => {
     return res.status(400).json({ message: 'Email, password, and full name are required' });
   }
 
-  // Hash the password before saving it to the database
+  // Helper to generate a 13 character alphanumeric code
+  const generateUserCode = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let code = '';
+    for (let i = 0; i < 13; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+  };
+  
+  const user_code = generateUserCode();
+
+  // Hash the password
   bcrypt.hash(password, 10, (err, hashedPassword) => {
     if (err) {
       console.error('Error hashing password:', err);
@@ -919,20 +931,22 @@ app.post('/api/users', (req, res) => {
     }
 
     const query = `
-      INSERT INTO users (email, password, full_name, giftpoints, nb_trashthrown, smart_bin_id, created_at, updated_at, role)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO users (
+        email, password, full_name, giftpoints, nb_trashthrown, smart_bin_id, created_at, updated_at, role, user_code
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const values = [
       email,
-      hashedPassword, // Use the hashed password
+      hashedPassword,
       full_name,
       giftpoints || 0,
       nb_trashthrown || 0,
       smart_bin_id || 0,
       created_at,
       updated_at,
-      role || 'user'
+      role || 'user',
+      user_code
     ];
 
     db.query(query, values, (err, result) => {
@@ -940,10 +954,11 @@ app.post('/api/users', (req, res) => {
         console.error('Error inserting user:', err);
         return res.status(500).json({ message: 'Server error' });
       }
-      res.status(201).json({ message: 'User added successfully', userId: result.insertId });
+      res.status(201).json({ message: 'User added successfully', userId: result.insertId, user_code });
     });
   });
 });
+
 
 
 app.get('/api/bin-values/:reference', (req, res) => {
